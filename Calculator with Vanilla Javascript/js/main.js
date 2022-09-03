@@ -1,0 +1,139 @@
+const initApp = () => {
+
+    const currentValueElem = document.querySelector('.currnetvalue')
+    const previousValueElem = document.querySelector(".previousvalue")
+    let itemArray = []
+    const equationArray = []
+    let newNumberFlag = false;
+
+    const inputButton = document.querySelectorAll(".number");
+    inputButton.forEach(button => {
+        button.addEventListener("click", (event) => {
+
+            const newInput = event.target.textContent;
+            if (newNumberFlag) {
+                currentValueElem.value = newInput;
+                newNumberFlag = false;
+            } else {
+                currentValueElem.value = currentValueElem.value == 0 ? newInput : `${currentValueElem.value}${newInput}`;
+            }
+        });
+    });
+
+    const opButton = document.querySelectorAll(".operator");
+    opButton.forEach(button => {
+        button.addEventListener("click", (event) => {
+
+            // equal sign showing
+            if (newNumberFlag) {
+                previousValueElem.value = "";
+                itemArray = [];
+            }
+            const newOperator = event.target.textContent;
+            const currentVal = currentValueElem.value;
+
+            // need number first
+            if (!itemArray.length && currentVal == 0) return;
+
+            // beguin new equation
+            if (!itemArray.length) {
+                itemArray.push(currentVal, newOperator);
+                previousValueElem.textContent =
+                    `${currentVal}
+                     ${newOperator}`
+                return newNumberFlag = true;
+            }
+            // complete an equation
+            if (itemArray.length) {
+                itemArray.push(currentVal); // 3rd Element
+                const equationObj = {
+                    num1: parseFloat(itemArray[0]),
+                    num2: parseFloat(currentVal),
+                    op: itemArray[1],
+                }
+
+                equationArray.push(equationObj);
+                const equationString =
+                    `${equationObj["num1"]}
+                     ${equationObj["op"]}
+                     ${equationObj["num2"]}`
+                const newValue = calculate(equationString, currentValueElem);
+
+                previousValueElem.textContent =
+                    `${newValue} ${newOperator}`;
+
+                // start a new equation
+                itemArray = [newValue, newOperator];
+                newNumberFlag = true;
+                console.log(equationArray);
+            }
+
+        });
+    })
+
+    const equalButton = document.querySelector(".equals");
+    equalButton.addEventListener("click", () => {
+        const currentVal = currentValueElem.value;
+        let equationObj;
+
+        // pressing equal repitely
+        if (!itemArray.length && equationArray.length) {
+            const lastEquation = equationArray[equationArray.length - 1];
+            equationObj = {
+                num1: parseFloat(currentVal),
+                num2: lastEquation.num2,
+                op: lastEquation.op,
+            }
+        } else if (!itemArray.length) {
+            return currentVal;
+        } else {
+            itemArray.push(currentVal)
+            equationObj = {
+                num1: parseFloat(itemArray[0]),
+                num2: parseFloat(currentVal),
+                op: itemArray[1],
+            }
+        }
+        equationArray.push(equationObj);
+
+        const equationString =
+            `${equationObj["num1"]} ${equationObj["op"]} ${equationObj["num2"]}`
+        calculate(equationString, currentValueElem);
+        previousValueElem.textContent = `${equationString} = `;
+        newNumberFlag = true;
+        itemArray = [];
+        constole.log(equationArray);
+    })
+
+
+    const clearButton = document.querySelectorAll(".clear, .clearEntry");
+    clearButton.forEach(button => {
+        button.addEventListener("click", (event) => {
+            currentValueElem.value = 0;
+            if (event.target.classList.contains("clear")) {
+                previousValueElem.textContent = '';
+                itemArray = [];
+            };
+        });
+    });
+
+    const deleteButton = document.querySelector(".delete");
+    deleteButton.addEventListener("click", () => {
+        currentValueElem.value = currentValueElem.value.slice(0, -1);
+    });
+
+    const signChangeButton = document.querySelector(".signChange");
+    signChangeButton.addEventListener('click', () => {
+        currentValueElem.value = parseFloat(currentValueElem.value) * -1;
+    })
+};
+
+document.addEventListener("DOMContentLoaded", initApp);
+
+const calculate = (equation, currentValueElem) => {
+    const regex = /(^[*/=])|(\s)/g;
+    equation.replace(regex, "");
+    const divByZero = /(\/0)/.test(equation)
+    if (divByZero) return currentValueElem.value = 0;
+    return currentValueElem.value = eval(equation);
+}
